@@ -83,7 +83,7 @@ ta_rating_html <- character()
 price_for_period_html <- character()
 countime <- 0
 
-for (j in 1877:length(hotels_wrap)){
+for (j in 1:length(hotels_wrap)){
   
   # Scraping fields from main bulletin
   hotel_name_html[j] <- ifelse(length(html_nodes(hotels_wrap[j],'.p-name')) > 0,
@@ -175,7 +175,7 @@ laundry <- numeric()
 pool <- numeric()
 parking <- numeric()
 count <- 0
-for (i in 1957:length(hotel_id)){
+for (i in 1:length(hotel_id)){
   loc_url <- read_html(paste0("https://www.hotels.com/ho",hotel_id[i],"?pos=HCOM_US&locale=en_US"))
   
   hotel_size_list <- (html_nodes(loc_url,"div.info-box")[1] %>% html_nodes(.,"ul"))[1] %>% html_nodes(.,"li") %>% tolower()
@@ -273,8 +273,8 @@ loc_df_2 <- loc_df
 all_loc_3 <- all_loc_df
 loc_df_3 <- loc_df
 # 18-19.11
-all_loc_3 <- all_loc_df
-loc_df_3 <- loc_df
+all_loc_4 <- all_loc_df
+loc_df_4 <- loc_df
 
 
 #london_tab <- distinct(data_tab)
