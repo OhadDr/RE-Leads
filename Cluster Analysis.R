@@ -1,3 +1,45 @@
+# Cluster Analysis #
+library(data.table)
+
+# Combining Scraper & OSM data
+london <- data.frame(data_agg,osm_loc)
+dim(london)
+
+
+# Hierarchical Clustering
+clust_tab <- london[,-c(1,2,6,9,11,25:30)] # removing non-relevant columns for clustering
+hc.complete <- hclust(dist(clust_tab), method="complete")
+plot(hc.complete ,main = "London Clustering", xlab="", sub="",cex=.9)
+cluster <- cutree(hc.complete,16)
+table(cluster)
+data_after_clust <- cbind(london,cluster)
+
+# First Iteration Score file
+first_iter <- fread("First Iteration Score.csv")
+names(first_iter)[3] <- "Score"
+first_iter <- first_iter[,-c(1,2)]
+data_score <- merge(y = data_after_clust,x = first_iter,by.y = "hotel_name",by.x = "Location",all.y = T)
+table(data_score$cluster,data_score$Score) # All Scored assets fall in clusters 1 & 2
+
+# Selecting Clusters 1 & 2 data and re-Clustering for better outcomes
+data_score_1 <- data_score %>% filter(cluster %in% c(1,2))
+clust_tab_1 <- data_score_1[,-c(1,2,3,7,10,12,26:31,56)] # removing non-relevant columns for clustering
+hc.complete <- hclust(dist(clust_tab_1), method="complete")
+plot(hc.complete ,main = "London Clustering Step 2", xlab="", sub="",cex=.9)
+cluster_1 <- cutree(hc.complete,30)
+table(cluster_1)
+data_after_clust_1 <- cbind(data_score_1,cluster_1)
+tmp <- data.frame(cbind(table(data_after_clust_1$cluster_1,data_after_clust_1$Score),(matrix(table(cluster_1)))))
+potential_1 <- data.frame(cluster_id=seq(1:dim(tmp)[1]),not_relevant=tmp$X1,maybe_relevant=tmp$X2,relevant=tmp$X3,cluster_size=tmp$V4) %>% 
+            mutate(.,purity=(maybe_relevant+relevant)/not_relevant,potential=cluster_size-relevant-maybe_relevant-not_relevant)
+potential_1 <- potential_1 %>% filter(purity>0.5,potential>5) # Clusters 2,4,5,6,7,8,9 might be interesting
+
+# Selecting Clusters 2,4,5,6,7,8,9 data and re-Clustering for better outcomes
+data_score_2 <- data_score_1 %>% filter(cluster %in% c(1,2))
+
+
+
+
 # Modeling - London #
 library(data.table)
 library(dplyr)

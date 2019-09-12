@@ -42,7 +42,7 @@ remDr <- rD$client
 
 # Navigating to desirable website
 remDr$open()
-url_hotels <- "https://www.hotels.com/search.do?resolved-location=CITY%3A549499%3AUNKNOWN%3AUNKNOWN&destination-id=549499&q-destination=London,%20England,%20United%20Kingdom&q-check-in=2019-11-18&q-check-out=2019-11-19&q-rooms=1&q-room-0-adults=2&q-room-0-children=0"
+url_hotels <- "https://www.hotels.com/search.do?resolved-location=CITY%3A549499%3AUNKNOWN%3AUNKNOWN&destination-id=549499&q-destination=London,%20England,%20United%20Kingdom&q-check-in=2019-11-29&q-check-out=2019-11-30&q-rooms=1&q-room-0-adults=2&q-room-0-children=0"
 url_hotels <- paste0(url_hotels,"&locale=en_US") # avoiding hebrew results
 remDr$navigate(url_hotels)
 
@@ -98,7 +98,7 @@ for (j in 1:length(hotels_wrap)){
                            html_nodes(hotels_wrap[j],'.map-link.xs-welcome-rewards') %>% html_text(),
                            NA)
   
-  city_center[j] <- ifelse(length(html_nodes(hotels_wrap[1877],'.property-landmarks li')) > 0,
+  city_center[j] <- ifelse(length(html_nodes(hotels_wrap[j],'.property-landmarks li')) > 0,
                            html_nodes(hotels_wrap[j],'.property-landmarks li')[1] %>% html_text() %>% 
                            gsub(" miles to City center","",.) %>% 
                            as.numeric(),
@@ -154,7 +154,10 @@ all_loc_df <- data.frame(hotel_name = hotel_name_html,
                          q_adults = rep(q_adults,length(hotel_name_html)),
                          q_children = rep(q_children,length(hotel_name_html))
                          )
-
+all_loc_df$price_for_period_USD <- as.numeric(as.character(all_loc_df$price_for_period_USD))
+all_loc_df$city_sector <- as.character(all_loc_df$city_sector)
+all_loc_df$trip_advisor_rating <- as.numeric(as.character(all_loc_df$trip_advisor_rating))
+all_loc_df$address <- as.character(all_loc_df$address)
 
 # Location Amenities
 hotel_id <- html_nodes(webpage,".listings li") %>% html_attr("data-hotel-id") %>% as.numeric() %>% .[!is.na(.)]
@@ -257,24 +260,30 @@ loc_df <- data.frame(hotel_name = h_name,
                      pool = pool,
                      parking = parking)
 loc_df$hotel_coordinates <- as.character(loc_df$hotel_coordinates)
+loc_df$num_of_rooms <- as.numeric(as.character(loc_df$num_of_rooms))
+loc_df$num_of_floors <- as.numeric(as.character(loc_df$num_of_floors)) 
 
-data_tab <- merge(x = all_loc_df,y = loc_df,by = "hotel_name")
-head(data_tab)
-dim(data_tab)
+# data_tab <- merge(x = all_loc_df,y = loc_df,by = "hotel_name")
+# head(data_tab)
+# dim(data_tab)
 
 
 # 1-2.10
 all_loc_1 <- all_loc_df
 loc_df_1 <- loc_df
+data_tab_1 <- merge(x = all_loc_1,y = loc_df_1,by = "hotel_name")
 # 25-26.10
 all_loc_2 <- all_loc_df
 loc_df_2 <- loc_df
+data_tab_2 <- merge(x = all_loc_2,y = loc_df_2,by = "hotel_name")
 # 18-19.11
 all_loc_3 <- all_loc_df
 loc_df_3 <- loc_df
-# 18-19.11
+data_tab_3 <- merge(x = all_loc_3,y = loc_df_3,by = "hotel_name")
+# 29-30.11
 all_loc_4 <- all_loc_df
 loc_df_4 <- loc_df
+data_tab_4 <- merge(x = all_loc_4,y = loc_df_4,by = "hotel_name")
 
 
 #london_tab <- distinct(data_tab)
@@ -284,10 +293,10 @@ loc_df_4 <- loc_df
 
 
 
-# write.csv(london_tab,"london_tab.csv")
-# write.csv(munich_tab,"munich_tab.csv")
-# write.csv(LA_tab,"LA_tab.csv")
-# write.csv(boston_tab,"boston_tab.csv")
+# write.csv(data_tab_1,"data_tab_1.csv")
+# write.csv(data_tab_2,"data_tab_2.csv")
+# write.csv(data_tab_3,"data_tab_3.csv")
+# write.csv(data_tab_4,"data_tab_4.csv")
 
 
 
