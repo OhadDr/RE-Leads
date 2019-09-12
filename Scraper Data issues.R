@@ -127,32 +127,6 @@ data_agg$walk_score <- as.numeric(walk_score)
 write.csv(data_agg,"data_agg.csv")
 
 
-
-
-# counter <- 1
-# for(i in data_agg$hotel_name){
-#   for(j in Global_Hotel_List){
-#     if(str_detect(i,regex(j, ignore_case = T),negate = FALSE)){
-#       data_agg$isBrandGlobal[counter] <- 1
-#       data_agg$brandNameGlobal[counter] <- j
-#     }
-#   }
-#   for(j in UK_Hotel_List){
-#     if(str_detect(i,regex(j, ignore_case = T),negate = FALSE)){
-#       data_agg$isBrandUK[counter] <- 1
-#       data_agg$brandNameUK[counter] <- j
-#     }
-#   }
-#   for(j in London_Hotel_List){
-#     if(str_detect(i,regex(j, ignore_case = T),negate = FALSE)){
-#       data_agg$isBrandLondon[counter] <- 1
-#       data_agg$brandNameLondon[counter] <- j
-#     }
-#   }
-#   counter <- counter + 1
-# }
-
-
 # Estimate Commercial Space - assumption that 10% of total asset space is commercial
 # total_space <- num_of_rooms*40
 # comm_space <- total_space*0.1
