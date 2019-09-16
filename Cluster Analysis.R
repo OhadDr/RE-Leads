@@ -1,38 +1,167 @@
 # Cluster Analysis #
 library(data.table)
+library(tidyverse)
+library(factoextra)   
 
-# Combining Scraper & OSM data
-london <- data.frame(data_agg,osm_loc)
-dim(london)
+# # Combining Scraper & OSM data
+# london <- data.frame(data_agg,osm_loc)
+# dim(london)
+
+london <- fread("london.csv")
+cooper <- fread("cooper data.csv")
+london <- rbind(london,cooper)
+
+end_list <- data.frame()
 
 
 # Hierarchical Clustering
 clust_tab <- london[,-c(1,2,6,9,11,25:30)] # removing non-relevant columns for clustering
-hc.complete <- hclust(dist(clust_tab), method="complete")
+
+# Step 1
+fviz_nbclust(clust_tab,FUNcluster = hcut, method = "wss",k.max = 15) + geom_vline(xintercept = 5) # Choosing number of clusters
+hc.complete <- hclust(dist(clust_tab), method="average")
 plot(hc.complete ,main = "London Clustering", xlab="", sub="",cex=.9)
-cluster <- cutree(hc.complete,16)
+cluster <- cutree(hc.complete,5)
 table(cluster)
 data_after_clust <- cbind(london,cluster)
 
-# First Iteration Score file
-first_iter <- fread("First Iteration Score.csv")
+# Ravi & Felipe Score after first iteration
+first_iter <- fread("First_iter.csv")
 names(first_iter)[3] <- "Score"
 first_iter <- first_iter[,-c(1,2)]
 data_score <- merge(y = data_after_clust,x = first_iter,by.y = "hotel_name",by.x = "Location",all.y = T)
-table(data_score$cluster,data_score$Score) # All Scored assets fall in clusters 1 & 2
+table(data_score$cluster,data_score$Score) # All Scored assets fall in clusters 1
+table(cluster)
 
-# Selecting Clusters 1 & 2 data and re-Clustering for better outcomes
-data_score_1 <- data_score %>% filter(cluster %in% c(1,2))
+# Step 2 - Selecting Cluster 1,2 data and re-Clustering for better outcomes
+data_score_1 <- data_score %>% filter(cluster %in% c(1))
 clust_tab_1 <- data_score_1[,-c(1,2,3,7,10,12,26:31,56)] # removing non-relevant columns for clustering
+fviz_nbclust(clust_tab_1,FUNcluster = hcut, method = "wss",k.max = 15) + geom_vline(xintercept = 4) # Choosing number of clusters
 hc.complete <- hclust(dist(clust_tab_1), method="complete")
 plot(hc.complete ,main = "London Clustering Step 2", xlab="", sub="",cex=.9)
-cluster_1 <- cutree(hc.complete,30)
+cluster_1 <- cutree(hc.complete,4)
 table(cluster_1)
 data_after_clust_1 <- cbind(data_score_1,cluster_1)
+# Trying to spot potential clustres
 tmp <- data.frame(cbind(table(data_after_clust_1$cluster_1,data_after_clust_1$Score),(matrix(table(cluster_1)))))
-potential_1 <- data.frame(cluster_id=seq(1:dim(tmp)[1]),not_relevant=tmp$X1,maybe_relevant=tmp$X2,relevant=tmp$X3,cluster_size=tmp$V4) %>% 
-            mutate(.,purity=(maybe_relevant+relevant)/not_relevant,potential=cluster_size-relevant-maybe_relevant-not_relevant)
-potential_1 <- potential_1 %>% filter(purity>0.5,potential>5) # Clusters 2,4,5,6,7,8,9 might be interesting
+potential_1 <- data.frame(cluster_id=seq(1:dim(tmp)[1]),not_relevant=tmp$X1,maybe_relevant=tmp$X2,relevant=tmp$X3,contacted=tmp$X4,cluster_size=tmp$V5) %>% 
+  mutate(.,con_per=contacted/cluster_size,
+         rel_per=relevant/cluster_size,
+         mrel_per=maybe_relevant/cluster_size,
+         nrel_per=not_relevant/cluster_size,
+         potential=cluster_size-contacted-relevant-maybe_relevant-not_relevant)
+#potential_1 <- potential_1 %>% filter(purity>0.5,potential>5)
+
+# Step 3 - Selecting Cluster 1 data and re-Clustering for better outcomes
+data_score_2 <- data_after_clust_1 %>% filter(cluster_1 %in% c(1,2))
+clust_tab_2 <- data_score_2[,-c(1,2,3,7,10,12,26:31,56:57)] # removing non-relevant columns for clustering
+fviz_nbclust(clust_tab_2,FUNcluster = hcut, method = "wss",k.max = 15) + geom_vline(xintercept = 3) # Choosing number of clusters
+hc.complete <- hclust(dist(clust_tab_2), method="complete")
+plot(hc.complete ,main = "London Clustering Step 3", xlab="", sub="",cex=.9)
+cluster_2 <- cutree(hc.complete,3)
+table(cluster_2)
+data_after_clust_2 <- cbind(data_score_2,cluster_2)
+# Trying to spot potential clustres
+tmp <- data.frame(cbind(table(data_after_clust_2$cluster_2,data_after_clust_2$Score),(matrix(table(cluster_2)))))
+potential_2 <- data.frame(cluster_id=seq(1:dim(tmp)[1]),not_relevant=tmp$X1,maybe_relevant=tmp$X2,relevant=tmp$X3,contacted=tmp$X4,cluster_size=tmp$V5) %>% 
+            mutate(.,con_per=contacted/cluster_size,
+                   rel_per=relevant/cluster_size,
+                   mrel_per=maybe_relevant/cluster_size,
+                   nrel_per=not_relevant/cluster_size,
+                   potential=cluster_size-contacted-relevant-maybe_relevant-not_relevant)
+#potential_2 <- potential_2 %>% filter(purity>0.5,potential>5)
+
+
+
+        # Step 4.1 - Selecting Clusters 1,2 data and re-Clustering for better outcomes
+        data_score_3 <- data_after_clust_2 %>% filter(cluster_2 %in% c(2))
+        clust_tab_3 <- data_score_3[,-c(1,2,3,7,10,12,26:31,56:58)] # removing non-relevant columns for clustering
+        fviz_nbclust(clust_tab_3,FUNcluster = hcut, method = "wss",k.max = 15) + geom_vline(xintercept = 3) # Choosing number of clusters
+        hc.complete <- hclust(dist(clust_tab_3), method="complete")
+        plot(hc.complete ,main = "London Clustering Step 4", xlab="", sub="",cex=.9)
+        cluster_3 <- cutree(hc.complete,3)
+        table(cluster_3)
+        data_after_clust_3 <- cbind(data_score_3,cluster_3)
+        # Trying to spot potential clustres
+        tmp <- data.frame(cbind(table(data_after_clust_3$cluster_3,data_after_clust_3$Score),(matrix(table(cluster_3)))))
+        potential_3 <- data.frame(cluster_id=seq(1:dim(tmp)[1]),not_relevant=tmp$X1,maybe_relevant=tmp$X2,relevant=tmp$X3,contacted=tmp$X4,cluster_size=tmp$V5) %>% 
+          mutate(.,con_per=contacted/cluster_size,
+                 rel_per=relevant/cluster_size,
+                 mrel_per=maybe_relevant/cluster_size,
+                 nrel_per=not_relevant/cluster_size,
+                 potential=cluster_size-contacted-relevant-maybe_relevant-not_relevant)
+        
+        data_score_4 <- data_after_clust_3 %>% filter(cluster_3 %in% c(2))
+        clust_tab_4 <- data_score_4[,-c(1,2,3,7,10,12,26:31,56:59)] # removing non-relevant columns for clustering
+        fviz_nbclust(clust_tab_4,FUNcluster = hcut, method = "wss",k.max = 15) + geom_vline(xintercept = 2) # Choosing number of clusters
+        hc.complete <- hclust(dist(clust_tab_4), method="complete")
+        plot(hc.complete ,main = "London Clustering Step 4", xlab="", sub="",cex=.9)
+        cluster_4 <- cutree(hc.complete,2)
+        table(cluster_4)
+        data_after_clust_4 <- cbind(data_score_4,cluster_4)
+        # Trying to spot potential clustres
+        tmp <- data.frame(cbind(table(data_after_clust_4$cluster_4,data_after_clust_4$Score),(matrix(table(cluster_4)))))
+        potential_4 <- data.frame(cluster_id=seq(1:dim(tmp)[1]),not_relevant=tmp$X1,maybe_relevant=tmp$X2,relevant=tmp$X3,contacted=tmp$X4,cluster_size=tmp$V5) %>% 
+          mutate(.,con_per=contacted/cluster_size,
+                 rel_per=relevant/cluster_size,
+                 mrel_per=maybe_relevant/cluster_size,
+                 nrel_per=not_relevant/cluster_size,
+                 potential=cluster_size-contacted-relevant-maybe_relevant-not_relevant)
+        
+        data_score_5 <- data_after_clust_4 %>% filter(cluster_4 %in% c(1))
+        clust_tab_5 <- data_score_5[,-c(1,2,3,7,10,12,26:31,56:60)] # removing non-relevant columns for clustering
+        fviz_nbclust(clust_tab_5,FUNcluster = hcut, method = "wss",k.max = 15) + geom_vline(xintercept = 3) # Choosing number of clusters
+        hc.complete <- hclust(dist(clust_tab_5), method="complete")
+        plot(hc.complete ,main = "London Clustering Step 5", xlab="", sub="",cex=.9)
+        cluster_5 <- cutree(hc.complete,3)
+        table(cluster_5)
+        data_after_clust_5 <- cbind(data_score_5,cluster_5)
+        # Trying to spot potential clustres
+        tmp <- data.frame(cbind(table(data_after_clust_5$cluster_5,data_after_clust_5$Score),(matrix(table(cluster_5)))))
+        potential_5 <- data.frame(cluster_id=seq(1:dim(tmp)[1]),not_relevant=tmp$X1,maybe_relevant=tmp$X2,relevant=tmp$X3,contacted=tmp$X4,cluster_size=tmp$V5) %>% 
+          mutate(.,con_per=contacted/cluster_size,
+                 rel_per=relevant/cluster_size,
+                 mrel_per=maybe_relevant/cluster_size,
+                 nrel_per=not_relevant/cluster_size,
+                 potential=cluster_size-contacted-relevant-maybe_relevant-not_relevant)
+        
+        data_after_clust_3 %>% filter(.,cluster_2==3)
+        end_list <- rbind(end_list)
+
+# Step 5 - Selecting Clusters 1,2,4 data and re-Clustering for better outcomes
+data_score_4 <- data_after_clust_3 %>% filter(cluster_3 %in% c(1,2,4))
+clust_tab_4 <- data_score_4[,-c(1,2,3,7,10,12,26:31,56:59)] # removing non-relevant columns for clustering
+fviz_nbclust(clust_tab_4,FUNcluster = hcut, method = "wss",k.max = 15) + geom_vline(xintercept = 6) # Choosing number of clusters
+hc.complete <- hclust(dist(clust_tab_4), method="complete")
+plot(hc.complete ,main = "London Clustering Step 5", xlab="", sub="",cex=.9)
+cluster_4 <- cutree(hc.complete,6)
+table(cluster_4)
+data_after_clust_4 <- cbind(data_score_4,cluster_4)
+# Trying to spot potential clustres
+tmp <- data.frame(cbind(table(data_after_clust_4$cluster_4,data_after_clust_4$Score),(matrix(table(cluster_4)))))
+potential_4 <- data.frame(cluster_id=seq(1:dim(tmp)[1]),not_relevant=tmp$X1,maybe_relevant=tmp$X2,relevant=tmp$X3,contacted=tmp$X4,cluster_size=tmp$V5) %>% 
+  mutate(.,purity=(contacted+maybe_relevant+relevant)/not_relevant,potential=cluster_size-contacted-relevant-maybe_relevant-not_relevant)
+#potential_4 <- potential_2 %>% filter(purity>0.5,potential>5)
+
+# Step 6 - Selecting Clusters 1,2,3,4 data and re-Clustering for better outcomes
+data_score_5 <- data_after_clust_4 %>% filter(cluster_4 %in% c(1,2,3,4))
+clust_tab_5 <- data_score_5[,-c(1,2,3,7,10,12,26:31,56:60)] # removing non-relevant columns for clustering
+fviz_nbclust(clust_tab_5,FUNcluster = hcut, method = "wss",k.max = 15) + geom_vline(xintercept = 4) # Choosing number of clusters
+hc.complete <- hclust(dist(clust_tab_5), method="complete")
+plot(hc.complete ,main = "London Clustering Step 6", xlab="", sub="",cex=.9)
+cluster_5 <- cutree(hc.complete,3)
+table(cluster_5)
+data_after_clust_5 <- cbind(data_score_5,cluster_5)
+# Trying to spot potential clustres
+tmp <- data.frame(cbind(table(data_after_clust_5$cluster_5,data_after_clust_5$Score),(matrix(table(cluster_5)))))
+potential_5 <- data.frame(cluster_id=seq(1:dim(tmp)[1]),not_relevant=tmp$X1,maybe_relevant=tmp$X2,relevant=tmp$X3,contacted=tmp$X4,cluster_size=tmp$V5) %>% 
+  mutate(.,con_per=contacted/cluster_size,
+         rel_per=relevant/cluster_size,
+         mrel_per=maybe_relevant/cluster_size,
+         nrel_per=not_relevant/cluster_size,
+         potential=cluster_size-contacted-relevant-maybe_relevant-not_relevant)
+#potential_4 <- potential_2 %>% filter(purity>0.5,potential>5)
+
 
 # Selecting Clusters 2,4,5,6,7,8,9 data and re-Clustering for better outcomes
 data_score_2 <- data_score_1 %>% filter(cluster %in% c(1,2))
